@@ -3,8 +3,8 @@
 import base64
 import io
 import json
+from pathlib import Path
 
-import anyio
 import click
 import pandas as pd
 import structlog
@@ -15,9 +15,9 @@ from plotting_mcp.configure_logging import configure_logging
 from plotting_mcp.constants import MCP_PORT
 from plotting_mcp.plot import plot_to_bytes
 
-mcp = FastMCP(name="plotting-mcp", port=MCP_PORT, host="0.0.0.0")
-
 logger = structlog.get_logger(__name__)
+
+mcp = FastMCP(name="plotting-mcp", host="0.0.0.0", port=MCP_PORT)
 
 
 @mcp.tool()
@@ -53,37 +53,41 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
         plot_bytes = plot_to_bytes(df, plot_type, **kwargs)
 
         encoded_image = base64.b64encode(plot_bytes).decode("utf-8")
-        logger.info("Plot generated successfully", plot_type=plot_type)
+        logger.info("Plot generated successfully", plot_type=plot_type, kwargs=kwargs)
         return f"data:image/png;base64,{encoded_image}"
     except Exception:
         logger.exception("Error generating plot")
         raise
 
 
-# This function is used to run the server with StreamableHTTP transport.
-# It is a direct copy of the `run_streamable_http_async` function from the MCP library.
-# This is necessary to be able to add middleware to the Starlette app and proper logging if needed.
-async def run_streamable_http_async(logging_dict: dict) -> None:
-    """Run the server using StreamableHTTP transport."""
-    starlette_app = mcp.streamable_http_app()
-
-    config = uvicorn.Config(
-        starlette_app, host=mcp.settings.host, port=mcp.settings.port, log_config=logging_dict
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
+# Have to do it this way to conform the string expected by uvicorn.run
+# Expected format: "<module>:<attribute>"
+starlette_app = mcp.streamable_http_app()
 
 
+@click.command()
 @click.option(
     "--log-level",
     default="INFO",
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     help="Set the logging level (default: INFO)",
 )
-def main(log_level: str = "INFO") -> None:
+@click.option(
+    "--reload",
+    is_flag=True,
+    help="Enable auto-reload for development (default: False)",
+)
+def main(log_level: str = "INFO", reload: bool = False) -> None:
     """Main entry point for the MCP server."""
     logging_dict = configure_logging(log_level=log_level)
-    anyio.run(run_streamable_http_async, logging_dict)
+    uvicorn.run(
+        "plotting_mcp.server:starlette_app",
+        host=mcp.settings.host,
+        port=mcp.settings.port,
+        log_config=logging_dict,
+        reload=reload,
+        reload_dirs=[str(Path(__file__).parent.absolute())],
+    )
 
 
 if __name__ == "__main__":
