@@ -1,5 +1,6 @@
 """MCP server for generating plots from CSV data."""
 
+import base64
 import io
 import json
 from pathlib import Path
@@ -9,7 +10,8 @@ import click
 import pandas as pd
 import structlog
 import uvicorn
-from mcp.server.fastmcp import FastMCP, Image
+from mcp.server.fastmcp import FastMCP
+from mcp.types import ImageContent, TextContent
 from starlette.responses import JSONResponse, Response
 
 from plotting_mcp.configure_logging import configure_logging
@@ -23,7 +25,9 @@ mcp = FastMCP(name="plotting-mcp", host="0.0.0.0", port=MCP_PORT)
 
 
 @mcp.tool()
-def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}") -> Image:
+def generate_plot(
+    csv_data: str, plot_type: str = "line", json_kwargs: str = "None"
+) -> tuple[TextContent, ImageContent]:
     """
     Generate a plot from CSV data.
 
@@ -43,11 +47,14 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
     Returns:
         Image: The generated plot as an image.
     """
-    try:
-        kwargs = json.loads(json_kwargs)
-    except Exception:
-        logger.exception("Invalid JSON for kwargs")
-        raise
+    if json_kwargs != "None":
+        try:
+            kwargs = json.loads(json_kwargs)
+        except Exception:
+            logger.exception("Invalid JSON for kwargs")
+            raise
+    else:
+        kwargs = {}
 
     try:
         df = pd.read_csv(io.StringIO(csv_data))
@@ -60,7 +67,14 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
             kwargs=kwargs,
             size=sizeof_fmt(len(plot_bytes)),
         )
-        return Image(data=plot_bytes, format="png")
+        return (
+            TextContent(type="text", text="Plot generated successfully"),
+            ImageContent(
+                type="image",
+                data=base64.b64encode(plot_bytes).decode(),
+                mimeType="image/png",
+            ),
+        )
     except Exception:
         logger.exception("Error generating plot")
         raise
