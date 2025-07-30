@@ -62,13 +62,9 @@ def _create_matplotlib_plot(  # noqa: C901
 
     # Extract optional parameters for figure title and axis labels
     # These are not accepted by Seaborn
-    fig_title, xlabel, ylabel = None, None, None
-    if "title" in kwargs:
-        fig_title = kwargs.pop("title")
-    if "xlabel" in kwargs:
-        xlabel = kwargs.pop("xlabel")
-    if "ylabel" in kwargs:
-        ylabel = kwargs.pop("ylabel")
+    fig_title = kwargs.pop("title", None)
+    xlabel = kwargs.pop("xlabel", None)
+    ylabel = kwargs.pop("ylabel", None)
 
     if plot_type == "line":
         sns.lineplot(data=df, ax=ax, **kwargs)
