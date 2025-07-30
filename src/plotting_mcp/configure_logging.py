@@ -28,6 +28,8 @@ def configure_logging(log_level: str = "INFO") -> Dict:
         cache_logger_on_first_use=True,
     )
 
+    # Capture warnings and redirect them to the logging system.
+    logging.captureWarnings(True)
     # Configuration for the standard library logging module.
     logging_dict = {
         "version": 1,

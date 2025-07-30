@@ -1,0 +1,32 @@
+apiVersion: toolhive.stacklok.dev/v1alpha1
+kind: MCPServer
+metadata:
+  name: plotting-mcp
+  namespace: toolhive-system
+spec:
+  image: YOUR_IMAGE_HERE
+  transport: streamable-http
+  port: 9090
+  targetPort: 9090
+  permissionProfile:
+    type: builtin
+    name: network
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+  podTemplateSpec:
+    spec:
+      volumes:
+        - name: mcp-tmp
+          persistentVolumeClaim:
+            claimName: mcp-plot-tmp
+      containers:
+        - name: mcp
+          volumeMounts:
+            - mountPath: /tmp
+              name: mcp-tmp
+              readOnly: false

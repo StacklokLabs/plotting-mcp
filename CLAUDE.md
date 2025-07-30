@@ -8,3 +8,6 @@
 
 ## Development Best Practices
 - After significant code changes run `make format` and `make typecheck` to make sure the code follows best practices
+
+## Code Maintenance Guidelines
+- When there is a new plot type added in plot.py we need to update the mcp tool in server.py

@@ -1,14 +1,14 @@
 import io
 from typing import Literal
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from cartopy.mpl.geoaxes import GeoAxes
 
-from plotting_mcp.constants import (
-    DEFAULT_DPI,
-    DEFAULT_FIGURE_SIZE,
-)
+from plotting_mcp.constants import PLOT_DPI, PLOT_FIGURE_SIZE
 
 
 def _auto_rotate_labels(ax: plt.Axes, axis: Literal["x", "y"] = "x") -> None:
@@ -45,6 +45,96 @@ def _auto_rotate_labels(ax: plt.Axes, axis: Literal["x", "y"] = "x") -> None:
         ax.tick_params(axis=axis, labelrotation=90)
 
 
+def _create_world_map(ax: GeoAxes, df: pd.DataFrame, **kwargs) -> None:
+    """Create a world map with coordinate points."""
+    # Add map features
+    ax.add_feature(cfeature.COASTLINE)
+    ax.add_feature(cfeature.BORDERS)
+    ax.add_feature(cfeature.OCEAN, color="lightblue")
+    ax.add_feature(cfeature.LAND, color="lightgray")
+
+    # Set global extent
+    ax.set_global()
+
+    # Extract coordinate columns - support common naming conventions
+    lat_col = None
+    lon_col = None
+
+    # Try to find latitude column
+    for col in df.columns:
+        col_lower = col.lower()
+        if col_lower in ["lat", "latitude", "y"]:
+            lat_col = col
+            break
+
+    # Try to find longitude column
+    for col in df.columns:
+        col_lower = col.lower()
+        if col_lower in ["lon", "lng", "long", "longitude", "x"]:
+            lon_col = col
+            break
+
+    if lat_col is None or lon_col is None:
+        raise ValueError(
+            "Could not find latitude/longitude columns. "
+            "Expected columns named: lat/latitude/y and lon/long/lng/longitude/x"
+        )
+
+    # Extract plotting parameters
+    marker_size = kwargs.pop("s", 50)
+    marker_color = kwargs.pop("c", "red")
+    marker_alpha = kwargs.pop("alpha", 0.7)
+    marker_style = kwargs.pop("marker", "o")
+
+    # Plot points on the map
+    ax.scatter(
+        df[lon_col],
+        df[lat_col],
+        s=marker_size,
+        c=marker_color,
+        alpha=marker_alpha,
+        marker=marker_style,
+        transform=ccrs.PlateCarree(),
+        **kwargs,
+    )
+
+    # Add gridlines
+    ax.gridlines(draw_labels=True, alpha=0.3)
+
+
+def _create_pie_plot(ax: plt.Axes, df: pd.DataFrame, **kwargs) -> None:
+    """Create a pie chart."""
+    # Ensure we have a single column for pie chart
+    if len(df.columns) > 2:
+        raise ValueError(
+            "Pie chart requires either one column of data or two columns for a breakdown, "
+            "where the first column is the category and the second is the value."
+        )
+
+    if len(df.columns) == 1:
+        labels = kwargs.pop("labels", None)
+        if labels is None:
+            labels = df.iloc[:, 0].unique()
+
+        # If only one column, use it as the value counts
+        ax.pie(df.iloc[:, 0].value_counts(), labels=labels, autopct="%1.1f%%", **kwargs)
+    elif len(df.columns) == 2:
+        provided_labels = kwargs.pop("labels", None)
+        if provided_labels is not None:
+            raise ValueError(
+                "Pie chart with two columns does not accept 'labels' parameter. "
+                "Use the first column as labels and the second as values."
+            )
+
+        # If two columns, assume first is category and second is value
+        ax.pie(
+            df.iloc[:, 1],
+            labels=df.iloc[:, 0],
+            autopct="%1.1f%%",
+            **kwargs,
+        )
+
+
 def _create_matplotlib_plot(  # noqa: C901
     df: pd.DataFrame, plot_type: str, **kwargs
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -52,13 +142,18 @@ def _create_matplotlib_plot(  # noqa: C901
     if df.empty:
         raise ValueError("CSV data is empty")
 
-    supported_plot_types = ["line", "bar", "pie"]
+    supported_plot_types = ["line", "bar", "pie", "worldmap"]
     if plot_type not in supported_plot_types:
         raise ValueError(
             f"Unsupported plot type: {plot_type}. Supported types: {supported_plot_types}"
         )
 
-    fig, ax = plt.subplots(figsize=DEFAULT_FIGURE_SIZE, dpi=DEFAULT_DPI)
+    # Create figure with appropriate projection for world map
+    if plot_type == "worldmap":
+        fig = plt.figure(figsize=PLOT_FIGURE_SIZE, dpi=PLOT_DPI)
+        ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+    else:
+        fig, ax = plt.subplots(figsize=PLOT_FIGURE_SIZE, dpi=PLOT_DPI)
 
     # Extract optional parameters for figure title and axis labels
     # These are not accepted by Seaborn
@@ -71,10 +166,13 @@ def _create_matplotlib_plot(  # noqa: C901
     elif plot_type == "bar":
         sns.barplot(data=df, ax=ax, **kwargs)
     elif plot_type == "pie":
-        ax.pie(df, **kwargs)
+        _create_pie_plot(ax, df, **kwargs)
+    elif plot_type == "worldmap":
+        # Cartopy doesn't return correct Axes type, so we ignore type checking
+        _create_world_map(ax, df, **kwargs)  # ty: ignore[invalid-argument-type]
 
-    # Auto-rotate x-axis labels if needed (not applicable for pie charts)
-    if plot_type != "pie":
+    # Auto-rotate x-axis labels if needed (not applicable for pie charts or world maps)
+    if plot_type not in ["pie", "worldmap"]:
         _auto_rotate_labels(ax, axis="x")
 
     # Set titles and labels
@@ -108,7 +206,15 @@ def plot_and_show(df: pd.DataFrame, plot_type: str, **kwargs) -> None:
 
 
 if __name__ == "__main__":
-    # Example usage
-    data = {"x": [1, 2, 3, 4, 5], "y": [2, 3, 5, 7, 11]}
+    # Example data for worldmap plot
+    # data = {
+    #     "lat": [-33.941, -33.942, -33.941, -33.936, -33.944],
+    #     "long": [18.467, 18.468, 18.467, 18.467, 18.470],
+    # }
+    # Example data for pie plot
+    data = {
+        "version": ["0.2.0", "0.1.8", "0.1.5", "0.1.9", "0.2.1"],
+        "event_count": [2083, 1298, 1267, 537, 533],
+    }
     df = pd.DataFrame(data)
-    plot_and_show(df, "line")
+    plot_and_show(df, "pie")

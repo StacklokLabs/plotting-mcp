@@ -15,13 +15,13 @@ from mcp.types import ImageContent, TextContent
 from starlette.responses import JSONResponse, Response
 
 from plotting_mcp.configure_logging import configure_logging
-from plotting_mcp.constants import MCP_PORT
+from plotting_mcp.constants import MCP_HOST, MCP_PORT
 from plotting_mcp.plot import plot_to_bytes
 from plotting_mcp.utils import sizeof_fmt
 
 logger = structlog.get_logger(__name__)
 
-mcp = FastMCP(name="plotting-mcp", host="0.0.0.0", port=MCP_PORT)
+mcp = FastMCP(name="plotting-mcp", host=MCP_HOST, port=MCP_PORT)
 
 
 @mcp.tool()
@@ -33,19 +33,27 @@ def generate_plot(
 
     Args:
         csv_data (str): CSV data as a string
-        plot_type (str): Type of plot to generate (line, bar, scatter, pie).
+        plot_type (str): Type of plot to generate (line, bar, pie, worldmap).
          If not specified, defaults to "line".
-        json_kwargs (str):
-            Additional plotting parameters in JSON format. In the background Seaborn is used,
+        json_kwargs (str, optional): JSON string with additional parameters for the plot.
+            If not specified, the plot will be generated with default parameters.
+            Additional plotting parameters in JSON format. For line/bar plots, Seaborn is used,
             so any parameters supported by Seaborn's plotting functions can be passed.
-            Basic parameters include:
-                - `x`: Column name for x-axis
-                - `y`: Column name for y-axis
-                - `hue`: Column name for color encoding
-            If not specified, defaults to an empty JSON object.
+            For bar/line plots, you can specify:
+                - `x` (str): Column name for x-axis
+                - `y` (str): Column name for y-axis
+                - `hue` (str): Column name for color encoding
+            For worldmap plots, coordinate data is expected with latitude/longitude columns:
+                - Latitude columns: lat, latitude, y
+                - Longitude columns: lon, lng, long, longitude, x
+                - `s` (int): marker size (default: 50)
+                - `c` (str): marker color (default: 'red')
+                - `alpha` (float): transparency (default: 0.7). Between 0 and 1.
+                - `marker` (str): marker style (default: 'o')
 
     Returns:
-        Image: The generated plot as an image.
+        tuple[TextContent, ImageContent]: A tuple containing a success message and the
+        generated plot as an image.
     """
     if json_kwargs != "None":
         try:

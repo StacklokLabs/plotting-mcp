@@ -3,3 +3,7 @@
 *.pyo
 *.pyd
 __pycache__/
+
+# Local deployment files with sensitive information
+*.local.yaml
+toolhive-deployment.local.yaml
