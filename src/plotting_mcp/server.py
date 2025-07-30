@@ -3,12 +3,14 @@
 import io
 import json
 from pathlib import Path
+from urllib.request import Request
 
 import click
 import pandas as pd
 import structlog
 import uvicorn
 from mcp.server.fastmcp import FastMCP, Image
+from starlette.responses import JSONResponse, Response
 
 from plotting_mcp.configure_logging import configure_logging
 from plotting_mcp.constants import MCP_PORT
@@ -39,7 +41,7 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
             If not specified, defaults to an empty JSON object.
 
     Returns:
-        Base64-encoded PNG image of the plot
+        Image: The generated plot as an image.
     """
     try:
         kwargs = json.loads(json_kwargs)
@@ -62,6 +64,12 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
     except Exception:
         logger.exception("Error generating plot")
         raise
+
+
+# Health check endpoint
+@mcp.custom_route("/", methods=["GET"])
+def health_check(request: Request) -> Response:
+    return JSONResponse({"status": "ok"})
 
 
 # Have to do it this way to conform the string expected by uvicorn.run
