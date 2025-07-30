@@ -1,6 +1,5 @@
 """MCP server for generating plots from CSV data."""
 
-import base64
 import io
 import json
 from pathlib import Path
@@ -9,11 +8,12 @@ import click
 import pandas as pd
 import structlog
 import uvicorn
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Image
 
 from plotting_mcp.configure_logging import configure_logging
 from plotting_mcp.constants import MCP_PORT
 from plotting_mcp.plot import plot_to_bytes
+from plotting_mcp.utils import sizeof_fmt
 
 logger = structlog.get_logger(__name__)
 
@@ -21,7 +21,7 @@ mcp = FastMCP(name="plotting-mcp", host="0.0.0.0", port=MCP_PORT)
 
 
 @mcp.tool()
-def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}") -> str:
+def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}") -> Image:
     """
     Generate a plot from CSV data.
 
@@ -43,7 +43,7 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
     """
     try:
         kwargs = json.loads(json_kwargs)
-    except json.JSONDecodeError:
+    except Exception:
         logger.exception("Invalid JSON for kwargs")
         raise
 
@@ -52,9 +52,13 @@ def generate_plot(csv_data: str, plot_type: str = "line", json_kwargs: str = "{}
 
         plot_bytes = plot_to_bytes(df, plot_type, **kwargs)
 
-        encoded_image = base64.b64encode(plot_bytes).decode("utf-8")
-        logger.info("Plot generated successfully", plot_type=plot_type, kwargs=kwargs)
-        return f"data:image/png;base64,{encoded_image}"
+        logger.info(
+            "Plot generated successfully",
+            plot_type=plot_type,
+            kwargs=kwargs,
+            size=sizeof_fmt(len(plot_bytes)),
+        )
+        return Image(data=plot_bytes, format="png")
     except Exception:
         logger.exception("Error generating plot")
         raise
@@ -87,6 +91,7 @@ def main(log_level: str = "INFO", reload: bool = False) -> None:
         log_config=logging_dict,
         reload=reload,
         reload_dirs=[str(Path(__file__).parent.absolute())],
+        timeout_graceful_shutdown=2,
     )
 
 
