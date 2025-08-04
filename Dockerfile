@@ -67,9 +67,6 @@ COPY --from=builder --chown=app:app /home/app/.local/share/cartopy ${CARTOPY_DAT
 RUN mkdir -p /tmp/matplotlib && chown app:app /tmp/matplotlib
 ENV MPLCONFIGDIR=/tmp/matplotlib
 
-# Set the host for the MCP server
-ENV MCP_HOST="0.0.0.0"
-
 # Switch to non-root user
 USER app
 

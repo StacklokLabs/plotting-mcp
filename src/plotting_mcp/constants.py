@@ -10,4 +10,3 @@ PLOT_DPI = int(os.getenv("PLOT_DPI", 100))
 
 # Constants for server configuration
 MCP_PORT = os.getenv("MCP_PORT", 9090)
-MCP_HOST = os.getenv("MCP_HOST", "127.0.0.1")

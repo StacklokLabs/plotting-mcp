@@ -15,13 +15,13 @@ from mcp.types import ImageContent, TextContent
 from starlette.responses import JSONResponse, Response
 
 from plotting_mcp.configure_logging import configure_logging
-from plotting_mcp.constants import MCP_HOST, MCP_PORT
+from plotting_mcp.constants import MCP_PORT
 from plotting_mcp.plot import plot_to_bytes
 from plotting_mcp.utils import sizeof_fmt
 
 logger = structlog.get_logger(__name__)
 
-mcp = FastMCP(name="plotting-mcp", host=MCP_HOST, port=MCP_PORT)
+mcp = FastMCP(name="plotting-mcp", host="0.0.0.0", port=MCP_PORT)
 
 
 @mcp.tool()
