@@ -1,12 +1,14 @@
-# Plotting MCP Server
+# 📊 Plotting MCP Server
 
-An MCP (Model Context Protocol) server that generates plots from CSV data, optimized for LibreChat integration.
+A MCP (Model Context Protocol) server that transforms CSV data into beautiful visualizations. Built with Python and optimized for seamless integration with AI assistants and chat applications.
 
-## Features
+## ✨ Features
 
-- Generate plots from CSV data strings
-- Support for multiple plot types: line, bar, pie
-- Returns base64-encoded PNG images compatible with LibreChat
+- **📈 Multiple Plot Types**: Create line charts, bar graphs, pie charts, and world maps
+- **🌍 Geographic Visualization**: Built-in support for plotting coordinate data on world maps using Cartopy
+- **🔧 Flexible Parameters**: Fine-tune your plots with JSON-based configuration options
+- **📱 Chat-Ready Output**: Returns base64-encoded PNG images perfect for AI chat interfaces
+- **⚡ Fast Processing**: Efficient CSV parsing and plot generation with pandas and matplotlib
 
 ## Installation
 
@@ -35,26 +37,57 @@ The server runs on port 9090 by default.
 ### Tools
 
 #### `generate_plot`
-Generate a plot from CSV data.
+Transform your CSV data into stunning visualizations.
 
 **Parameters:**
 - `csv_data` (str): CSV data as a string
-- `plot_type` (str): Type of plot (line, bar, pie)
-- `**kwargs`: Additional plotting parameters.
+- `plot_type` (str): Plot type - `line`, `bar`, `pie`, or `worldmap`
+- `json_kwargs` (str): JSON string with plotting parameters for customization
 
-**Returns:** Base64 PNG image with data URL prefix
+**Plotting Options:**
+- **Line/Bar Charts**: Use Seaborn parameters (`x`, `y`, `hue` for data mapping)
+- **World Maps**: Automatic coordinate detection (`lat`/`latitude`/`y` and `lon`/`longitude`/`x`)
+  - Customize with `s` (size), `c` (color), `alpha` (transparency), `marker` (style)
+- **Pie Charts**: Supports single column (value counts) or two columns (labels + values)
 
-## LibreChat Integration
+**Returns:** Base64-encoded PNG image ready for display
 
-This MCP server is designed to work with LibreChat. The generated images are returned as base64 PNG data that LibreChat can display directly.
+## 🤖 AI Assistant Integration
 
-Supported image format: PNG
+Perfect for enhancing AI conversations with data visualization capabilities. The server returns plots as base64-encoded PNG images that display seamlessly in:
 
-## ToolHive
+- **LibreChat**: Direct integration for chat-based data analysis
+- **Claude Desktop**: Through `mcp-remote` command to transform from HTTP transport to stdio
+```json
+{
+  "mcpServers": {
+    "math": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://localhost:9090/mcp"
+      ]
+    }
+  }
+}
+```
+- **Custom AI Applications**: Easy integration via MCP protocol
+- **Development Tools**: Compatible with any MCP-enabled environment
 
-ToolHive is a platform that simplifies the deployment and management of Model Context Protocol (MCP) servers by providing containerized, secure environments across UI, CLI, and Kubernetes modes. It offers streamlined deployment with comprehensive security controls and integration with popular development tools.
+**Image Format**: High-quality PNG with configurable DPI and sizing
 
-For more information, see the [ToolHive documentation](https://docs.stacklok.com/toolhive/). To get started with the CLI, check out the [ToolHive CLI Quickstart](https://docs.stacklok.com/toolhive/tutorials/quickstart-cli).
+## 🚀 ToolHive Deployment
+
+Deploy and manage your plotting server effortlessly with ToolHive - a platform that provides containerized, secure environments for MCP servers across UI, CLI, and Kubernetes modes.
+
+**Benefits:**
+- 🔒 **Secure Containerization**: Isolated environments with comprehensive security controls
+- ⚙️ **Multiple Deployment Options**: UI, CLI, and Kubernetes support
+- 🔧 **Developer-Friendly**: Seamless integration with popular development tools
+
+📚 **Resources:**
+- [ToolHive Documentation](https://docs.stacklok.com/toolhive/)
+- [CLI Quickstart Guide](https://docs.stacklok.com/toolhive/tutorials/quickstart-cli)
 
 ### Build the Docker image
 
@@ -77,7 +110,7 @@ thv run --name plotting-mcp --transport streamable-http plotting-mcp:latest
 kubectl apply -f toolhive-pvc.yaml
 ```
 
-2. Deploy the MCP server in K8s
+2. Deploy the MCP server in K8s. In the `toolhive-deployment.yaml`, you can customize the `image` field to point to your image registry.
 ```bash
 kubectl apply -f toolhive-deployment.yaml
 ```
@@ -87,21 +120,28 @@ kubectl apply -f toolhive-deployment.yaml
 kubectl port-forward svc/mcp-plotting-mcp-proxy 9090:9090
 ```
 
-## Development
+## 🛠️ Development
 
-### Code Formatting
+Built with modern Python tooling for a great developer experience.
+
+**Tech Stack:**
+- 🐍 **Python 3.13+**: Latest Python features
+- 📊 **Seaborn & Matplotlib**: Professional-grade plotting
+- 🌍 **Cartopy**: Advanced geospatial visualization
+- ⚡ **FastMCP**: High-performance MCP server framework
+- 🔧 **UV**: Fast Python package management
+
+### Code Quality
 
 ```bash
+# Format code and fix linting issues
 make format
-# or
+
+# Type checking
+make typecheck
+
+# Or use uv directly
 uv run ruff format .
 uv run ruff check --fix .
-```
-
-### Typechecking
-
-```bash
-make typecheck
-# or
 uv run ty check
 ```
