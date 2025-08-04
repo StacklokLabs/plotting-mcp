@@ -14,7 +14,7 @@ requires-python = ">=3.13"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.13",
 ]
@@ -32,6 +32,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pytest>=8.4.1",
     "ruff>=0.12.5",
     "ty>=0.0.1a16",
 ]
@@ -52,5 +53,17 @@ lint.select = [
     "I", # isort
     "C", # flake8-comprehensions
     "B", # flake8-bugbear
-    "S", # flake8-bandit
 ]
+lint.ignore = []
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-config",
+    "-v"
+]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

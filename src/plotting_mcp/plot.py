@@ -45,7 +45,7 @@ def _auto_rotate_labels(ax: plt.Axes, axis: Literal["x", "y"] = "x") -> None:
         ax.tick_params(axis=axis, labelrotation=90)
 
 
-def _create_world_map(ax: GeoAxes, df: pd.DataFrame, **kwargs) -> None:
+def _create_world_map_plot(ax: GeoAxes, df: pd.DataFrame, **kwargs) -> None:
     """Create a world map with coordinate points."""
     # Add map features
     ax.add_feature(cfeature.COASTLINE)
@@ -135,12 +135,16 @@ def _create_pie_plot(ax: plt.Axes, df: pd.DataFrame, **kwargs) -> None:
         )
 
 
-def _create_matplotlib_plot(  # noqa: C901
+def _create_plot(  # noqa: C901
     df: pd.DataFrame, plot_type: str, **kwargs
 ) -> tuple[plt.Figure, plt.Axes]:
     """Create a plot using matplotlib/seaborn."""
     if df.empty:
         raise ValueError("CSV data is empty")
+
+    # Validate that the DataFrame contains no NaN values
+    if df.isnull().any().any():
+        raise ValueError("CSV data contains NaN/null values. Please ensure all data is complete.")
 
     supported_plot_types = ["line", "bar", "pie", "worldmap"]
     if plot_type not in supported_plot_types:
@@ -169,7 +173,7 @@ def _create_matplotlib_plot(  # noqa: C901
         _create_pie_plot(ax, df, **kwargs)
     elif plot_type == "worldmap":
         # Cartopy doesn't return correct Axes type, so we ignore type checking
-        _create_world_map(ax, df, **kwargs)  # ty: ignore[invalid-argument-type]
+        _create_world_map_plot(ax, df, **kwargs)  # ty: ignore[invalid-argument-type]
 
     # Auto-rotate x-axis labels if needed (not applicable for pie charts or world maps)
     if plot_type not in ["pie", "worldmap"]:
@@ -190,7 +194,7 @@ def _create_matplotlib_plot(  # noqa: C901
 
 def plot_to_bytes(df: pd.DataFrame, plot_type: str, **kwargs) -> bytes:
     """Generate a plot and return it as bytes."""
-    fig, _ = _create_matplotlib_plot(df, plot_type, **kwargs)
+    fig, _ = _create_plot(df, plot_type, **kwargs)
     buffer = io.BytesIO()
     fig.savefig(buffer, format="png", bbox_inches="tight")
     plt.close(fig)
@@ -200,7 +204,7 @@ def plot_to_bytes(df: pd.DataFrame, plot_type: str, **kwargs) -> bytes:
 
 def plot_and_show(df: pd.DataFrame, plot_type: str, **kwargs) -> None:
     """Generate a plot and display it."""
-    fig, _ = _create_matplotlib_plot(df, plot_type, **kwargs)
+    fig, _ = _create_plot(df, plot_type, **kwargs)
     plt.show()
     plt.close(fig)
 

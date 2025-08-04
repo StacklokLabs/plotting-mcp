@@ -11,3 +11,8 @@
 
 ## Code Maintenance Guidelines
 - When there is a new plot type added in plot.py we need to update the mcp tool in server.py
+
+## Dependency Management
+- This project uses uv for managing dependencies. In case you need to add a dependency use the command `uv add <dependency>`
+- If the dependency is for developing, e.g. for testing use `uv add <dependency> --dev`
+- All of the configuration of the project should be centralized in the pyproject.toml file
