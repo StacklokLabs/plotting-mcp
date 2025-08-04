@@ -14,3 +14,6 @@ jobs:
   tests:
     name: Tests
     uses: ./.github/workflows/test.yml
+  image-build:
+    name: Build Docker Image
+    uses: ./.github/workflows/image-build.yml
