@@ -6,6 +6,12 @@ on:
       - 'v*'
 
 jobs:
+  linting:
+    name: Linting
+    uses: ./.github/workflows/lint.yml
+  tests:
+    name: Tests
+    uses: ./.github/workflows/test.yml
   release:
     name: Release Container
     runs-on: ubuntu-latest
@@ -15,12 +21,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-
-      - name: Linting
-        uses: ./.github/workflows/lint.yml@main
-
-      - name: Tests
-        uses: ./.github/workflows/test.yml@main
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
