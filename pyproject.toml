@@ -56,6 +56,9 @@ lint.select = [
 ]
 lint.ignore = []
 
+[tool.ty.src]
+exclude = ["tests"]
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = [
