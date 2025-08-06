@@ -61,11 +61,11 @@ Perfect for enhancing AI conversations with data visualization capabilities. The
 ```json
 {
   "mcpServers": {
-    "math": {
-      "command": "npx",
+    "plotting": {
+      "command": "uvx",
       "args": [
-        "mcp-remote",
-        "http://localhost:9090/mcp"
+        "--from", "/path/to/plotting-mcp",
+        "plotting-mcp", "--transport=stdio"
       ]
     }
   }

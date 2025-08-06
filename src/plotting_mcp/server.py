@@ -111,18 +111,30 @@ starlette_app = mcp.streamable_http_app()
     is_flag=True,
     help="Enable auto-reload for development (default: False)",
 )
-def main(log_level: str = "INFO", reload: bool = False) -> None:
+@click.option(
+    "--transport",
+    default="http",
+    type=click.Choice(["stdio", "http"]),
+    help="Transport type for the MCP server (default: http)",
+)
+def main(log_level: str = "INFO", reload: bool = False, transport: str = "http") -> None:
     """Main entry point for the MCP server."""
     logging_dict = configure_logging(log_level=log_level)
-    uvicorn.run(
-        "plotting_mcp.server:starlette_app",
-        host=mcp.settings.host,
-        port=mcp.settings.port,
-        log_config=logging_dict,
-        reload=reload,
-        reload_dirs=[str(Path(__file__).parent.absolute())],
-        timeout_graceful_shutdown=2,
-    )
+
+    if transport == "stdio":
+        mcp.run("stdio")
+    elif transport == "http":
+        uvicorn.run(
+            "plotting_mcp.server:starlette_app",
+            host=mcp.settings.host,
+            port=mcp.settings.port,
+            log_config=logging_dict,
+            reload=reload,
+            reload_dirs=[str(Path(__file__).parent.absolute())],
+            timeout_graceful_shutdown=2,
+        )
+    else:
+        raise ValueError(f"Unsupported transport type: {transport}")
 
 
 if __name__ == "__main__":
