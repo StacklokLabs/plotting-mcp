@@ -1,4 +1,4 @@
-FROM python:3.13-slim AS builder
+FROM python:3.14-slim AS builder
 
 # Install system dependencies required for Cartopy and other packages
 RUN apt-get update && apt-get install -y \
@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/home/app/.cache/uv,uid=1000,gid=1000 \
 # Pre-download Cartopy map data to avoid runtime downloads
 RUN /app/.venv/bin/python download_cartopy_data.py
 
-FROM python:3.13-slim AS runner
+FROM python:3.14-slim AS runner
 
 # Install runtime dependencies for Cartopy
 RUN apt-get update && apt-get install -y \
